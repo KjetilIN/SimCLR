@@ -4,7 +4,6 @@ import sys
 
 import torch
 import torch.nn.functional as F
-from torch.cuda.amp import GradScaler, autocast
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 from utils import save_config_file, accuracy, save_checkpoint
@@ -56,7 +55,7 @@ class SimCLR(object):
 
     def train(self, train_loader):
 
-        scaler = GradScaler(enabled=self.args.fp16_precision)
+        scaler = torch.GradScaler()
 
         # save config file
         save_config_file(self.writer.log_dir, self.args)
@@ -71,7 +70,7 @@ class SimCLR(object):
 
                 images = images.to(self.args.device)
 
-                with autocast(enabled=self.args.fp16_precision):
+                with torch.autocast(device_type='cpu', dtype=torch.float16):
                     features = self.model(images)
                     logits, labels = self.info_nce_loss(features)
                     loss = self.criterion(logits, labels)
